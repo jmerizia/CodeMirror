@@ -56,6 +56,8 @@ export function applyTextInput(cm, inserted, deleted, sel, origin) {
     updateInput = cm.curOp.updateInput
     let changeEvent = {from: from, to: to, text: multiPaste ? multiPaste[i % multiPaste.length] : textLines,
                        origin: origin || (paste ? "paste" : cm.state.cutIncoming ? "cut" : "+input")}
+    console.log("Changed!")
+    console.log(changeEvent)
     makeChange(cm.doc, changeEvent)
     signalLater(cm, "inputRead", cm, changeEvent)
   }
