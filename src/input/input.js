@@ -21,6 +21,7 @@ export function setLastCopied(newLastCopied) {
 }
 
 export function applyTextInput(cm, inserted, deleted, sel, origin) {
+  console.log('change is being made')
   let doc = cm.doc
   cm.display.shift = false
   if (!sel) sel = doc.sel
