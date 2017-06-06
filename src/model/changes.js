@@ -44,6 +44,8 @@ function filterChange(doc, change, update) {
 // Apply a change to a document, and add it to the document's
 // history, and propagating it to all linked documents.
 export function makeChange(doc, change, ignoreReadOnly) {
+  signal(doc.cm, "changePendingSync", doc.cm, change)
+
 //  if (doc.cm) {
 //    if (!doc.cm.curOp) return operation(doc.cm, makeChange)(doc, change, ignoreReadOnly)
 //    if (doc.cm.state.suppressEdits) return
