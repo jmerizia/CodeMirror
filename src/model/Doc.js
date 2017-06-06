@@ -9,7 +9,7 @@ import { splitLinesAuto } from "../util/feature_detection"
 import { createObj, map, isEmpty, sel_dontScroll } from "../util/misc"
 import { ensureCursorVisible, scrollToCoords } from "../display/scrolling"
 
-import { changeLine, makeChange, makeChangeFromHistory, replaceRange } from "./changes"
+import { changeLine, makeChange, makeChangeFromHistory, replaceRange, makeChangeAfterSync } from "./changes"
 import { computeReplacedSel } from "./change_measurement"
 import { BranchChunk, LeafChunk } from "./chunk"
 import { directionChanged, linkedDocs, updateDoc } from "./document_data"
@@ -73,7 +73,7 @@ Doc.prototype = createObj(BranchChunk.prototype, {
   },
   setValue: docMethodOp(function(code) {
     let top = Pos(this.first, 0), last = this.first + this.size - 1
-    makeChange(this, {from: top, to: Pos(last, getLine(this, last).text.length),
+    makeChangeAfterSync(this, {from: top, to: Pos(last, getLine(this, last).text.length),
                       text: this.splitLines(code), origin: "setValue", full: true}, true)
     if (this.cm) scrollToCoords(this.cm, 0, 0)
     setSelection(this, simpleSelection(top), sel_dontScroll)
@@ -87,6 +87,9 @@ Doc.prototype = createObj(BranchChunk.prototype, {
     let lines = getBetween(this, clipPos(this, from), clipPos(this, to))
     if (lineSep === false) return lines
     return lines.join(lineSep || this.lineSeparator())
+  },
+  applyChangeAfterSync: function(changeObj) {
+    makeChangeAfterSync(this, changeObj)
   },
 
   getLine: function(line) {let l = this.getLineHandle(line); return l && l.text},
@@ -179,7 +182,7 @@ Doc.prototype = createObj(BranchChunk.prototype, {
     }
     let newSel = collapse && collapse != "end" && computeReplacedSel(this, changes, collapse)
     for (let i = changes.length - 1; i >= 0; i--)
-      makeChange(this, changes[i])
+      makeChangeAfterSync(this, changes[i])
     if (newSel) setSelectionReplaceHistory(this, newSel)
     else if (this.cm) ensureCursorVisible(this.cm)
   }),
