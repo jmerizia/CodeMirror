@@ -44,30 +44,6 @@ function filterChange(doc, change, update) {
 // Apply a change to a document, and add it to the document's
 // history, and propagating it to all linked documents.
 export function makeChange(doc, change, ignoreReadOnly) {
-  signal(doc.cm, "changePendingSync", doc.cm, change)
-
-//  if (doc.cm) {
-//    if (!doc.cm.curOp) return operation(doc.cm, makeChange)(doc, change, ignoreReadOnly)
-//    if (doc.cm.state.suppressEdits) return
-//  }
-//
-//  if (hasHandler(doc, "beforeChange") || doc.cm && hasHandler(doc.cm, "beforeChange")) {
-//    change = filterChange(doc, change, true)
-//    if (!change) return
-//  }
-//
-//  // Possibly split or suppress the update based on the presence
-//  // of read-only spans in its range.
-//  let split = sawReadOnlySpans && !ignoreReadOnly && removeReadOnlyRanges(doc, change.from, change.to)
-//  if (split) {
-//    for (let i = split.length - 1; i >= 0; --i)
-//      makeChangeInner(doc, {from: split[i].from, to: split[i].to, text: i ? [""] : change.text})
-//  } else {
-//    makeChangeInner(doc, change)
-//  }
-}
-
-export function makeChangeAfterSync(doc, change, ignoreReadOnly) {
   if (doc.cm) {
     if (!doc.cm.curOp) return operation(doc.cm, makeChange)(doc, change, ignoreReadOnly)
     if (doc.cm.state.suppressEdits) return
@@ -87,14 +63,15 @@ export function makeChangeAfterSync(doc, change, ignoreReadOnly) {
   } else {
     makeChangeInner(doc, change)
   }
-
 }
 
+
 function makeChangeInner(doc, change) {
+
   if (change.text.length == 1 && change.text[0] == "" && cmp(change.from, change.to) == 0) return
   let selAfter = computeSelAfterChange(doc, change)
   addChangeToHistory(doc, change, selAfter, doc.cm ? doc.cm.curOp.id : NaN)
-
+  
   makeChangeSingleDoc(doc, change, selAfter, stretchSpansOverChange(doc, change))
   let rebased = []
 
@@ -189,6 +166,7 @@ function shiftDoc(doc, distance) {
   }
 }
 
+
 // More lower-level change function, handling only a single document
 // (not linked ones).
 function makeChangeSingleDoc(doc, change, selAfter, spans) {
@@ -222,9 +200,18 @@ function makeChangeSingleDoc(doc, change, selAfter, spans) {
   setSelectionNoUndo(doc, selAfter, sel_dontScroll)
 }
 
+
+// only add changes to editor when this function is called
+// NOTE: only include spans for THIS user
+export function makeChangeAfterSync(cm, change) {
+  makeChange(cm, change);
+}
+
 // Handle the interaction of a change to a document with the editor
 // that this document is part of.
 function makeChangeSingleDocInEditor(cm, change, spans) {
+  signal(cm, "changePendingSync", cm, change, spans)
+  
   let doc = cm.doc, display = cm.display, from = change.from, to = change.to
 
   let recomputeMaxLength = false, checkWidthStart = from.line
@@ -281,6 +268,8 @@ function makeChangeSingleDocInEditor(cm, change, spans) {
     if (changesHandler) (cm.curOp.changeObjs || (cm.curOp.changeObjs = [])).push(obj)
   }
   cm.display.selForContextMenu = null
+
+
 }
 
 export function replaceRange(doc, code, from, to, origin) {
